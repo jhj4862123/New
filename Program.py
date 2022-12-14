@@ -71,11 +71,13 @@ from openpyxl.drawing.image import Image
 
 wbMaster = load_workbook('점검양식.xlsx')
 wsMaster = wbMaster.active
-wbSlave = load_workbook('점검데이터.xlsx')
-slavestandard = pd.read_excel('점검데이터.xlsx', sheet_name='기준정보')
+wbSlave = load_workbook('점검데이터.xlsx', data_only=True)
+slavestandard = wbSlave['기준정보']
 
 wsSlave = wbSlave.active
 
+wsMaster['C7'] = slavestandard['b30'].value
+print(f"slavestandard가 출력되었습니다.{wsSlave['b30'].value}")
 ############################# 변수들 ########################################
 
 for i in range(chargernum):
@@ -88,8 +90,8 @@ for i in range(chargernum):
         wsMaster['G7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
         print(copynum)
 
+    print(f"i가 출력되었습니다.  {i}")
 
-        #
     copyname = wsSlave['3'][i+1].value  # 점검자 이름
     wsMaster['G3'] = copyname
     wsMaster['G3'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
