@@ -76,7 +76,7 @@ slavestandard = wbSlave['기준정보']
 
 wsSlave = wbSlave.active
 
-wsMaster['C7'] = slavestandard['b30'].value
+# wsMaster['C7'] = slavestandard['b30'].value
 print(f"slavestandard가 출력되었습니다.{wsSlave['b30'].value}")
 ############################# 변수들 ########################################
 
