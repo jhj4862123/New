@@ -96,6 +96,7 @@ for i in range(chargernum):
         copyynum = copynum
         wsMaster['G7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
+
         if slavestandard['B'] == copynum:
             copynum = copyynum
         print(copyynum)
