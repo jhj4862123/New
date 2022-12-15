@@ -1,22 +1,66 @@
 import os
 import shutil
 import pyautogui
-
 import openpyxl
 import time
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import pandas as pd
-from PIL import Image
 from datetime import datetime
-
-import tkinter
+from tkinter import *
 from tkinter import filedialog
+from tkinter import messagebox
+from tqdm import tqdm
 
-root = tkinter.Tk()
-root.withdraw()
-dir_path = filedialog.askdirectory(parent=root,initialdir="./",title='충전기 사진 폴더를 선택해 주세요.')
-print("\ndir_path : ", dir_path)
+############################ 이미지 폴더 선택 ########################################
+root = Tk()
+root.title("폴더 선택 창")   # 타이틀 설정
+
+file_frame = Frame(root)
+file_frame.pack(fill="x", padx = 5, pady= 5)
+
+root.geometry("320x240") # 가로 *세로 사이즈
+root.resizable(False, False)    #가로 *세로 사이즈 변경 가능 유무
+
+dir_path = None        #폴더 경로 담을 변수 생성
+
+def folder_select():
+    global dir_path
+    dir_path = filedialog.askdirectory(initialdir="./", \
+                                       title = "폴더를 선택 해 주세요")  #folder 변수에 선택 폴더 경로 넣기
+    if dir_path == '':
+        messagebox.showwarning("경고", "폴더를 선택 하세요")    #폴더 선택 안했을 때 메세지 출력
+    else:
+        res = os.listdir(dir_path) # 폴더에 있는 파일 리스트 넣기
+        if len(res) == 0:
+            messagebox.showwarning("경고", "폴더내 파일이 없습니다.")
+        else:
+            root.destroy()
+
+# def savefolder_select():
+#     global save_dir_path
+#     save_dir_path = filedialog.askdirectory(initialdir="./", \
+#                                             title = "폴더를 선택 해 주세요")  #folder 변수에 선택 폴더 경로 넣기
+#     if save_dir_path == '':
+#         messagebox.showwarning("경고", "폴더를 선택 하세요")    #폴더 선택 안했을 때 메세지 출력
+#     else:
+#         res = os.listdir(save_dir_path) # 폴더에 있는 파일 리스트 넣기
+#         if len(res) == 0:
+#             messagebox.showwarning("경고", "폴더내 파일이 없습니다.")
+#         else:
+#             root.destroy()
+
+
+btn_active_dir = Button(file_frame, text ="충전기 사진을 선택해 주세요. \n\n사진 형식 : 충전기번호_1.jpg\n ex) 1234_1.jpg", \
+                        font=36, width = 24, padx = 10, pady= 20, command=folder_select)
+btn_active_dir.pack( padx = 5, pady= 5)
+
+# btn_active_dir = Button(file_frame, text ="파일을 저장할 폴더를 선택해 주세요. \n\n", \
+#                         font=36, width = 24, padx = 10, pady= 20, command=savefolder_select())
+# btn_active_dir.pack( padx = 5, pady= 5)
+
+root.mainloop()
+
 ############################ 경로 및 양식 ########################################
 
 now = datetime.now()
@@ -47,54 +91,97 @@ data = pd.read_excel(path)
 base = photosrc
 print("\nbase : ", base)
 
-############################# 충전기 갯수 카운트 ########################################
+count_photo = [] # 사진의 갯수
 
-chargernum = 0
+############################# 충전기 갯수 카운트 및 이미지 리사이즈 ########################################
+from PIL import Image
+
+chargernum = 0 # 충전기의 갯수
 
 for name in data.iloc[0,1:]: #None 없애기
     chargernum += 1
+    k = 0
+    globals()[f'a_{chargernum}'] = k
+
 
     for j in range(1, 7):
         fileName = os.path.join(base, str(name) + "_" + str(j) + ".jpg")
+        tempName = os.path.join(base, str(name) + "-" + str(j) + ".jpg")
+
         if os.path.exists(fileName):
-            print(fileName)
             img = Image.open(fileName)
-            img = img.convert('RGB')
-            resize_img = img.resize((584, 378))
-            resize_img.save(base +  str(name) + "_" + str(j) + "(resize).jpg")
+
+        elif os.path.exists(tempName):
+            shutil.move(tempName, fileName)
+            img = Image.open(fileName)
+            #print(f"shutil.move(tempName, fileName) ===>{fileName}")
+
         else:
+            print(f"{fileName}이 없습니다.")
+            k += 1
+            globals()[f'a_{chargernum}'] = k
+            print(globals()[f'a_{chargernum}'])
             continue
+
+        img = img.convert('RGB')
+        resize_img = img.resize((584, 378))
+        resize_img.save(base + str(name) + "_" + str(j) + "(resize).jpg")
 
 ############################# 양식 ########################################
 
 from openpyxl.drawing.image import Image
 
 wbMaster = load_workbook('점검양식.xlsx')
-wsMaster = wbMaster.active
+wsMaster = wbMaster['점검양식']
 wbSlave = load_workbook('점검데이터.xlsx', data_only=True)
-slavestandard = wbSlave['기준정보']
+slavestandard = wbSlave['참조데이터']
+wsSlave = wbSlave['점검정보']
 
-wsSlave = wbSlave.active
-
-wsMaster['C7'] = slavestandard['b30'].value
-wsMaster['C8'] = slavestandard['b31'].value
-wsMaster['C9'] = slavestandard['b32'].value
-wsMaster['C10'] = slavestandard['b33'].value
-
-#print(f"slavestandard가 출력되었습니다.{wsSlave['b30'].value}")
 ############################# 변수들 ########################################
 
-for i in range(chargernum):
+for i in tqdm(range(chargernum)):
+    print("사진이 없는 갯수 : "+ str(globals()[f'a_{chargernum}']))
+    if globals()[f'a_{chargernum}'] == 6:
+        continue
+
     wbMaster = load_workbook('점검양식.xlsx')
-    wsMaster = wbMaster.active
+    wsMaster = wbMaster['점검양식']
+    # wsMaster = wbMaster.active
+    slavestandard = wbSlave['참조데이터']
+    wsSlave = wbSlave['점검정보']
 
-    for j in range(1, 7):
-        copynum = wsSlave['2'][i+1].value  # 충전기 번호
-        wsMaster['G7'] = copynum
-        wsMaster['G7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
-        print(copynum)
+    copynum = wsSlave['2'][i + 1].value  # 충전기 번호
+    wsMaster['G7'] = copynum
+    wsMaster['G7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
-    print(f"i가 출력되었습니다.  {i}")
+    #    print(f"충전소 이름이 출력되었습니다.{slavestandard[2][1+i].value}")
+    wsMaster['C7'] = slavestandard[2][1+i].value
+    wsMaster['C7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    #    print(f"충전기 제조사가 출력되었습니다.{slavestandard[3][1+i].value}")
+    wsMaster['C8'] = slavestandard[3][1+i].value
+    wsMaster['C8'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    #    print(f"충전소 좌표가 출력되었습니다.{slavestandard[4][1+i].value}")
+    wsMaster['C9'] = slavestandard[4][1+i].value
+    wsMaster['C9'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    #    print(f"충전소 주소가 출력되었습니다.{slavestandard[5][1+i].value}")
+    wsMaster['C10'] = slavestandard[5][1+i].value
+    wsMaster['C10'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    print(f"위치가 출력되었습니다.{wsSlave[29][1].value}")
+
+    if wsSlave[29][1 + i].value is None: # 변경하지 않은 값
+        wsMaster['E13'] = slavestandard[6][1+i].value
+        wsMaster['E13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+    else: # 변경한 값
+        wsMaster['E13'] = wsSlave[29][1 + i].value
+        wsMaster['E13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    #    print(f"충전기 용량이 출력되었습니다.{slavestandard[7][1+i].value}")
+    wsMaster['G15'] = slavestandard[7][1+i].value
+    wsMaster['G15'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
     copyname = wsSlave['3'][i+1].value  # 점검자 이름
     wsMaster['G3'] = copyname
@@ -172,6 +259,7 @@ for i in range(chargernum):
 
     ############################ 사진 ########################################
 
+# 사진이 하나도 없으면 이 For문을 돌지 않게
     for j in range(1, 7):
         src_img_1 = os.path.join(base, str(copynum) + "_1.jpg")
         src_img_2 = os.path.join(base, str(copynum) + "_2.jpg")
@@ -223,7 +311,7 @@ for i in range(chargernum):
     shutil.move(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx",
                 newpath + "/" + str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx")
     wbMaster.close()
-    print(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx" + "생성완료")
+    print(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx" + " 파일이 생성되었습니다.")
 
 
 file_list = os.listdir(base) # 폴더안의 파일 리스트를 얻습니다.
