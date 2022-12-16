@@ -101,28 +101,25 @@ chargernum = 0 # 충전기의 갯수
 for name in data.iloc[0,1:]: #None 없애기
     chargernum += 1
     k = 0
-    globals()[f'a_{chargernum}'] = k
-
 
     for j in range(1, 7):
         fileName = os.path.join(base, str(name) + "_" + str(j) + ".jpg")
         tempName = os.path.join(base, str(name) + "-" + str(j) + ".jpg")
 
+
         if os.path.exists(fileName):
             img = Image.open(fileName)
-
         elif os.path.exists(tempName):
             shutil.move(tempName, fileName)
             img = Image.open(fileName)
-            #print(f"shutil.move(tempName, fileName) ===>{fileName}")
-
         else:
-            print(f"{fileName}이 없습니다.")
+            #print(f"{fileName}이 없습니다.")
             k += 1
-            globals()[f'a_{chargernum}'] = k
-            print(globals()[f'a_{chargernum}'])
+            globals()['test' + str(chargernum)] = k
+            # print('test{}:'.format(chargernum))
+            NoImgCount = 'test{}'.format(chargernum)
+            # print(globals()[f'{NoImgCount}'])
             continue
-
         img = img.convert('RGB')
         resize_img = img.resize((584, 378))
         resize_img.save(base + str(name) + "_" + str(j) + "(resize).jpg")
@@ -140,8 +137,12 @@ wsSlave = wbSlave['점검정보']
 ############################# 변수들 ########################################
 
 for i in tqdm(range(chargernum)):
-    print("사진이 없는 갯수 : "+ str(globals()[f'a_{chargernum}']))
-    if globals()[f'a_{chargernum}'] == 6:
+
+    #print("===> 사진이 없는 갯수 : ")
+    NoImgCount = 'test{}'.format(i+1)
+    #print(globals()[f'{NoImgCount}'])
+
+    if globals()[f'{NoImgCount}'] == 6:
         continue
 
     wbMaster = load_workbook('점검양식.xlsx')
@@ -154,30 +155,30 @@ for i in tqdm(range(chargernum)):
     wsMaster['G7'] = copynum
     wsMaster['G7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
-    #    print(f"충전소 이름이 출력되었습니다.{slavestandard[2][1+i].value}")
+    print(f"충전소 이름이 출력되었습니다.{slavestandard[2][1+i].value}")
     wsMaster['C7'] = slavestandard[2][1+i].value
     wsMaster['C7'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
-    #    print(f"충전기 제조사가 출력되었습니다.{slavestandard[3][1+i].value}")
+    print(f"충전기 제조사가 출력되었습니다.{slavestandard[3][1+i].value}")
     wsMaster['C8'] = slavestandard[3][1+i].value
     wsMaster['C8'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
-    #    print(f"충전소 좌표가 출력되었습니다.{slavestandard[4][1+i].value}")
+    print(f"충전소 좌표가 출력되었습니다.{slavestandard[4][1+i].value}")
     wsMaster['C9'] = slavestandard[4][1+i].value
     wsMaster['C9'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
-    #    print(f"충전소 주소가 출력되었습니다.{slavestandard[5][1+i].value}")
+    print(f"충전소 주소가 출력되었습니다.{slavestandard[5][1+i].value}")
     wsMaster['C10'] = slavestandard[5][1+i].value
     wsMaster['C10'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
     print(f"위치가 출력되었습니다.{wsSlave[29][1].value}")
 
     if wsSlave[29][1 + i].value is None: # 변경하지 않은 값
-        wsMaster['E13'] = slavestandard[6][1+i].value
-        wsMaster['E13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+        wsMaster['D13'] = slavestandard[6][1+i].value
+        wsMaster['D13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
     else: # 변경한 값
-        wsMaster['E13'] = wsSlave[29][1 + i].value
-        wsMaster['E13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+        wsMaster['D13'] = wsSlave[29][1 + i].value
+        wsMaster['D13'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
     #    print(f"충전기 용량이 출력되었습니다.{slavestandard[7][1+i].value}")
     wsMaster['G15'] = slavestandard[7][1+i].value
@@ -208,6 +209,13 @@ for i in tqdm(range(chargernum)):
     copyhumi = wsSlave['7'][i + 1].value  # 습도
     wsMaster['G4'] = copyhumi
     wsMaster['G4'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
+    if wsSlave[8][1 + i].value is None: # 충전기 설치유형
+        wsMaster['C11'] = ("벽걸이형")
+        wsMaster['C11'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+    else: # 변경한 값
+        wsMaster['C11'] = wsSlave[8][1 + i].value
+        wsMaster['C11'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
     copyvolt = wsSlave['11'][i + 1].value  # 전압
     wsMaster['G14'] = copyvolt
@@ -241,6 +249,10 @@ for i in tqdm(range(chargernum)):
     wsMaster['G42'] = copyes
     wsMaster['G42'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
+    copystopper = wsSlave['20'][i + 1].value  # 스토퍼
+    wsMaster['G38'] = copystopper
+    wsMaster['G38'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
+
     copyil = wsSlave['23'][i + 1].value  # 설치위치
     # wsMaster[#위치불명] = copyil
     wsMaster['G42'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
@@ -257,9 +269,13 @@ for i in tqdm(range(chargernum)):
     wsMaster['G70'] = copysp
     wsMaster['G70'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
 
+    if wsSlave[27][1 + i].value != None: # 충전기 설치유형
+        wsMaster['C81'] = wsSlave[27][1 + i].value
+        wsMaster['C81'].fill = PatternFill(start_color='FF9900', end_color='FF9900', fill_type='solid')
     ############################ 사진 ########################################
 
-# 사진이 하나도 없으면 이 For문을 돌지 않게
+    # 사진이 하나도 없으면 이 For문을 돌지 않게
+
     for j in range(1, 7):
         src_img_1 = os.path.join(base, str(copynum) + "_1.jpg")
         src_img_2 = os.path.join(base, str(copynum) + "_2.jpg")
@@ -307,7 +323,10 @@ for i in tqdm(range(chargernum)):
 
     ############################# 출력형식 ########################################
 
-    wbMaster.save(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx")
+    if globals()[f'{NoImgCount}'] != 6:
+        wbMaster.save(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx")
+    else:
+        continue
     shutil.move(str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx",
                 newpath + "/" + str(copynum) + "_" + str(copyname) + "_" + str(day001) + ".xlsx")
     wbMaster.close()
