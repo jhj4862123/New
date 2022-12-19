@@ -1,3 +1,4 @@
+import re
 import os
 import shutil
 import pyautogui
@@ -93,15 +94,40 @@ print("\nbase : ", base)
 
 count_photo = [] # 사진의 갯수
 
+############################ 파일 분리 ############################################################
+file_names = []
+
+file_names = os.listdir(dir_path)
+print(f"file_names : {file_names}")
+for name in file_names :
+    src_name = name
+    temp_name = re.split('[,|_|.]', name)
+    copyfolder = 'copy/' + name
+    print(f"글자수 : {len(temp_name)}")
+    if(len(temp_name) != 3) :
+
+        print(f"temp_name : {temp_name}")
+
+        for j in range(0, len(temp_name) - 2) :
+            print(f"글자 분리 : {temp_name[j]}")
+            src = os.path.join(photosrc, name)
+            print(f"src : {src}")
+            dst = temp_name[j] + '_' + temp_name[-2] + '.jpg'
+            dst = os.path.join(photosrc, dst)
+            print(f"dst : {dst}")
+            shutil.copyfile(src, dst)
+
 ############################# 충전기 갯수 카운트 및 이미지 리사이즈 ########################################
 from PIL import Image
 
 chargernum = 0 # 충전기의 갯수
 
+
+
+
 for name in data.iloc[0,1:]: #None 없애기
     chargernum += 1
     k = 0
-
     for j in range(1, 7):
         fileName = os.path.join(base, str(name) + "_" + str(j) + ".jpg")
         tempName = os.path.join(base, str(name) + "-" + str(j) + ".jpg")
@@ -275,7 +301,6 @@ for i in tqdm(range(chargernum)):
     ############################ 사진 ########################################
 
     # 사진이 하나도 없으면 이 For문을 돌지 않게
-
     for j in range(1, 7):
         src_img_1 = os.path.join(base, str(copynum) + "_1.jpg")
         src_img_2 = os.path.join(base, str(copynum) + "_2.jpg")
